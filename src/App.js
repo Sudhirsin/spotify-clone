@@ -1,11 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import Login from './Login';
+import Player from './Player';
 import './App.css';
 import { getTokenFromUrl } from './spotify';
+import { useDataLayerValue } from './DataLayer';
+
+import SpotifyWebApi from 'spotify-web-api-js';
+
+// create a new instace of spotify --> which allow us to communicate with spotify app
+const spotify = new SpotifyWebApi();
+
+
 
 function App() {
 
-  const [token, setToken] = useState(null);
+  // const [token, setToken] = useState(null);
+
+  // set the token in our datalayer
+  const [{ user, token }, dispatch] = useDataLayerValue();
 
   // Run code based on given condition
   useEffect(() => {
@@ -19,11 +31,35 @@ function App() {
     const _token = hash.access_token;
 
     if (_token) {
-      setToken(_token)
+      // setToken(_token)
+
+      // rathen than doing the setToken we use dispatch
+      dispatch({
+        type: 'SET_TOKEN',
+        token: _token
+      })
+
+      // check the connect between our app to spotify app
+      // set accessToken key to spotify app
+      spotify.setAccessToken(_token);
+
+      // get the user account
+      spotify.getMe().then(user => {
+        // console.log('person', user)
+
+        dispatch({
+          type: 'SET_USER',
+          // user: user
+          user
+        })
+      });
     }
 
-    console.log('I have a token >>>', token);
+    // console.log('I have a token >>>', token);
   }, [])
+
+  // console.log('I have a user >>>', user);
+  // console.log('I have a token >>>', token);
 
   return (
     // BEM
@@ -31,7 +67,8 @@ function App() {
       
       {
         token ? (
-          <h1>I am logged in</h1>
+          <Player spotify={ spotify } />
+          // <h1>I am logged in</h1>
         ) : (
           <Login />
         )
